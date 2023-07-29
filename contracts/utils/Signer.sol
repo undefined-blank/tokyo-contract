@@ -59,9 +59,23 @@ contract Signer {
     }
 
     function verify_withness(
-        uint256 game_id, address winner,
+        address withness, uint256 game_id, address winner,
         uint8 v, bytes32 r, bytes32 s
     ) public view returns(bool){
+        bytes32 hashedMessage = hashStruct_judge(Judge(game_id, winner));
+
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                hashedMessage
+            )
+        );
+
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress == withness, "Veryfi: Fail");
+        
+        return true;
     }
     
     function hashStruct_message(Message memory _message) pure public returns (bytes32 hash){    
@@ -76,8 +90,10 @@ contract Signer {
 
     function hashStruct_judge(Judge memory _judge) pure public returns (bytes32 hash){
         return keccak256(abi.encode(
-            
-        ))
+            JUDGE_TYPEHASH,
+            _judge.game_id,
+            _judge.winner
+        ));
     }
 
 }
